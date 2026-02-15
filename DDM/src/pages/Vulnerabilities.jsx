@@ -1,122 +1,126 @@
+/**import { useEffect, useState } from "react";
 import "../styles/vulnerabilities.css";
 
 function Vulnerabilities() {
+  const [vulnerabilities, setVulnerabilities] = useState([]);
+
+  useEffect(() => {
+    const fetchVulnerabilities = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        const res = await fetch("http://localhost:5000/api/vulnerability/vulnerabilities", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = await res.json();
+        setVulnerabilities(data);
+      } catch (err) {
+        console.error("Error fetching vulnerabilities:", err);
+      }
+    };
+
+    fetchVulnerabilities();
+  }, []);
+
+  // ✅ Dynamic counts
+  const total = vulnerabilities.length;
+  const critical = vulnerabilities.filter(v => v.severity === "CRITICAL").length;
+  const high = vulnerabilities.filter(v => v.severity === "HIGH").length;
+  const medium = vulnerabilities.filter(v => v.severity === "MEDIUM").length;
+  const low = vulnerabilities.filter(v => v.severity === "LOW").length;
+
   return (
     <div className="page-wrapper">
+      <h1>Vulnerabilities</h1>
 
-      {/* Page Header */}
-      <div className="page-header">
-        <div>
-          <h1>Vulnerabilities</h1>
-          <p>Known security vulnerabilities across all projects</p>
-        </div>
-      </div>
-
-      {/* Stats Row */}
       <div className="vuln-stats">
-
-        <div className="stat-card">
-          <p>Total</p>
-          <h2>11</h2>
-        </div>
-
-        <div className="stat-card">
-          <p>Critical</p>
-          <h2 className="red">3</h2>
-        </div>
-
-        <div className="stat-card">
-          <p>High</p>
-          <h2 className="orange">4</h2>
-        </div>
-
-        <div className="stat-card">
-          <p>Medium</p>
-          <h2 className="yellow">2</h2>
-        </div>
-
-        <div className="stat-card">
-          <p>Low</p>
-          <h2 className="green">2</h2>
-        </div>
-
+        <div className="stat-card"><p>Total</p><h2>{total}</h2></div>
+        <div className="stat-card"><p>Critical</p><h2 className="red">{critical}</h2></div>
+        <div className="stat-card"><p>High</p><h2 className="orange">{high}</h2></div>
+        <div className="stat-card"><p>Medium</p><h2 className="yellow">{medium}</h2></div>
+        <div className="stat-card"><p>Low</p><h2 className="green">{low}</h2></div>
       </div>
 
-      {/* Search + Filter */}
-      <div className="vuln-controls">
-        <input placeholder="Search vulnerabilities..." />
-        <select>
-          <option>All Severity</option>
-        </select>
-      </div>
-
-      {/* Vulnerability Cards */}
       <div className="vuln-list">
-
-        {/* Card 1 */}
-        <div className="vuln-card">
-          <div className="vuln-header">
-            <div>
-              <h3>CVE-2024-1234</h3>
-              <p>lodash • react-app</p>
-            </div>
-            <span className="badge critical">CRITICAL</span>
+        {vulnerabilities.map(v => (
+          <div className="vuln-card" key={v._id}>
+            <h3>{v.cveId}</h3>
+            <p>{v.packageName}</p>
+            <span>{v.severity}</span>
+            <p>{v.description}</p>
           </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
-          <p className="vuln-description">
-            Prototype pollution vulnerability in lodash versions prior to 4.17.21.
-          </p>
+export default Vulnerabilities;*/
+import { useEffect, useState } from "react";
+import "../styles/vulnerabilities.css";
 
-          <div className="vuln-footer">
-            <span>Discovered 2 days ago</span>
-            <button className="resolve-btn">View Details</button>
-          </div>
-        </div>
+function Vulnerabilities() {
+  const [vulnerabilities, setVulnerabilities] = useState([]);
 
-        {/* Card 2 */}
-        <div className="vuln-card">
-          <div className="vuln-header">
-            <div>
-              <h3>CVE-2024-5678</h3>
-              <p>express • api-service</p>
-            </div>
-            <span className="badge high">HIGH</span>
-          </div>
+  useEffect(() => {
+    const fetchVulnerabilities = async () => {
+      try {
+        const token = localStorage.getItem("token");
 
-          <p className="vuln-description">
-            Denial of service vulnerability in Express.js middleware chain.
-          </p>
+        const res = await fetch("http://localhost:5000/api/vulnerability/vulnerabilities", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-          <div className="vuln-footer">
-            <span>Discovered 5 days ago</span>
-            <button className="resolve-btn">View Details</button>
-          </div>
-        </div>
+        const data = await res.json();
+        setVulnerabilities(data);
+      } catch (err) {
+        console.error("Error fetching vulnerabilities:", err);
+      }
+    };
 
-        {/* Card 3 */}
-        <div className="vuln-card">
-          <div className="vuln-header">
-            <div>
-              <h3>CVE-2024-7890</h3>
-              <p>moment • mobile-app</p>
-            </div>
-            <span className="badge medium">MEDIUM</span>
-          </div>
+    fetchVulnerabilities();
+  }, []);
 
-          <p className="vuln-description">
-            Improper input validation leading to unexpected behavior.
-          </p>
+  // ✅ Dynamic counts
+  const total = vulnerabilities.length;
+  const critical = vulnerabilities.filter(v => v.severity === "CRITICAL").length;
+  const high = vulnerabilities.filter(v => v.severity === "HIGH").length;
+  const medium = vulnerabilities.filter(v => v.severity === "MEDIUM").length;
+  const low = vulnerabilities.filter(v => v.severity === "LOW").length;
 
-          <div className="vuln-footer">
-            <span>Discovered 1 week ago</span>
-            <button className="resolve-btn">View Details</button>
-          </div>
-        </div>
+  return (
+    <div className="page-wrapper">
+      <h1>Vulnerabilities</h1>
 
+      <div className="vuln-stats">
+        <div className="stat-card"><p>Total</p><h2>{total}</h2></div>
+        <div className="stat-card"><p>Critical</p><h2 className="red">{critical}</h2></div>
+        <div className="stat-card"><p>High</p><h2 className="orange">{high}</h2></div>
+        <div className="stat-card"><p>Medium</p><h2 className="yellow">{medium}</h2></div>
+        <div className="stat-card"><p>Low</p><h2 className="green">{low}</h2></div>
       </div>
 
+      {/* ✅ Vulnerability List */}
+      <div className="vuln-list">
+        {vulnerabilities.map(v => (
+          <div className="vuln-card" key={v.dep_vul_id}>
+            <h3>{v.cve_id || "No CVE ID"}</h3>
+            <p><strong>Dependency:</strong> {v.dependency_name}</p>
+            <p><strong>Version:</strong> {v.current_version}</p>
+            <span className="severity">{v.severity}</span>
+            <p>{v.summary || "No description available"}</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 
 export default Vulnerabilities;
+
+
