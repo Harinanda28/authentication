@@ -186,7 +186,8 @@ exports.resetPassword = async (req, res) => {
     }
 
     const userId = user.rows[0].user_id;
-
+    console.log("Login attempt:", email, password);
+    console.log("User from DB:", user.rows[0]);
     const otpRecord = await pool.query(
       `SELECT * FROM otp_verification 
        WHERE user_id=$1 
@@ -219,4 +220,6 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+
 

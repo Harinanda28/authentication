@@ -3,31 +3,18 @@ const cors = require("cors");
 require("dotenv").config();
 
 const authRoutes = require("./routes/authRoutes");
-
+const vulnerabilityRoutes = require("./routes/vulnerabilityRoutes");
 
 const app = express();
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/projects", require("./routes/projectRoutes"));
+app.use("/api/vulnerability", vulnerabilityRoutes);
 
 
-// Test server alive
-app.get("/hello", (req, res) => {
-  res.send("Hello world!");
-});
 
-app.get("/test", (req, res) => res.json({ message: "Server is alive!" }));
-
-// Start server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
-// Handle unhandled promise rejections
-process.on("unhandledRejection", (err) => {
-  console.error("Unhandled promise rejection:", err);
+app.listen(process.env.PORT || 5000, () => {
+  console.log(`Server running on port ${process.env.PORT || 5000}`);
 });
