@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import "../styles/projects.css";
+import "../styles/NewProject.css";
 
 function NewProject() {
     const navigate = useNavigate();
@@ -64,52 +64,45 @@ function NewProject() {
     };
 
     return (
-        <div className="projects-page">
-            <div className="page-header">
-                <div>
-                    <Link to="/projects" className="back-link">← Back to Projects</Link>
-                    <h1 style={{ marginTop: "10px" }}>Create New Project</h1>
+        <div className="new-project-page">
+            <div className="form-card">
+                <div className="form-header">
+                    <h1>Create New Project</h1>
                     <p>Upload your dependency file to start monitoring</p>
                 </div>
-            </div>
 
-            <div className="details-container" style={{ maxWidth: "600px", margin: "0 auto" }}>
-                <div className="details-section">
-                    {error && <div className="error-message" style={{ marginBottom: "20px" }}>{error}</div>}
+                {error && <div className="form-error">{error}</div>}
 
-                    <form onSubmit={handleSubmit} className="new-project-form">
-                        <div className="form-group">
-                            <label htmlFor="project_name">Project Name</label>
-                            <input
-                                type="text"
-                                id="project_name"
-                                name="project_name"
-                                value={formData.project_name}
-                                onChange={handleChange}
-                                required
-                                placeholder="e.g. My Awesome App"
-                                style={{ width: "100%", padding: "10px", marginBottom: "15px", border: "1px solid #ddd", borderRadius: "5px" }}
-                            />
-                        </div>
+                <form onSubmit={handleSubmit} className="new-project-form">
+                    <div className="input-group">
+                        <label htmlFor="project_name">Project Name</label>
+                        <input
+                            type="text"
+                            id="project_name"
+                            name="project_name"
+                            value={formData.project_name}
+                            onChange={handleChange}
+                            required
+                            placeholder="e.g. My Awesome App"
+                            className="modern-input"
+                        />
+                    </div>
 
-                        <div className="form-group">
-                            <label htmlFor="description">Description (Optional)</label>
-                            <textarea
-                                id="description"
-                                name="description"
-                                value={formData.description}
-                                onChange={handleChange}
-                                placeholder="Brief description of your project..."
-                                rows="4"
-                                style={{ width: "100%", padding: "10px", marginBottom: "15px", border: "1px solid #ddd", borderRadius: "5px" }}
-                            />
-                        </div>
+                    <div className="input-group">
+                        <label htmlFor="description">Description (Optional)</label>
+                        <textarea
+                            id="description"
+                            name="description"
+                            value={formData.description}
+                            onChange={handleChange}
+                            placeholder="Brief description of your project..."
+                            className="modern-textarea"
+                        />
+                    </div>
 
-                        <div className="form-group">
-                            <label htmlFor="dependencyFile">Dependency File</label>
-                            <div style={{ marginBottom: "5px", color: "#666", fontSize: "0.9em" }}>
-                                Supported formats: <code>package.json</code> (Node.js), <code>requirements.txt</code> (Python)
-                            </div>
+                    <div className="input-group">
+                        <label htmlFor="dependencyFile">Dependency File</label>
+                        <div className="file-upload-area">
                             <input
                                 type="file"
                                 id="dependencyFile"
@@ -117,20 +110,32 @@ function NewProject() {
                                 accept=".json,.txt"
                                 onChange={handleFileChange}
                                 required
-                                style={{ marginBottom: "20px" }}
+                                className="file-input-hidden"
                             />
+                            <span className="upload-icon">📁</span>
+                            {file ? (
+                                <span className="upload-text" style={{ color: "#2563eb" }}>{file.name}</span>
+                            ) : (
+                                <>
+                                    <span className="upload-text">Click to upload or drag and drop</span>
+                                    <span className="upload-hint">Supported: package.json, requirements.txt</span>
+                                </>
+                            )}
                         </div>
+                    </div>
 
-                        <button
-                            type="submit"
-                            className="primary-btn"
-                            disabled={loading}
-                            style={{ width: "100%", opacity: loading ? 0.7 : 1 }}
-                        >
-                            {loading ? "Creating Project..." : "Create Project"}
-                        </button>
-                    </form>
-                </div>
+                    <button
+                        type="submit"
+                        className="submit-btn"
+                        disabled={loading}
+                    >
+                        {loading ? "Creating Project..." : "Create Project"}
+                    </button>
+
+                    <div style={{ textAlign: "center", marginTop: "15px" }}>
+                        <Link to="/projects" style={{ color: "#6b7280", textDecoration: "none", fontSize: "14px" }}>Cancel</Link>
+                    </div>
+                </form>
             </div>
         </div>
     );
