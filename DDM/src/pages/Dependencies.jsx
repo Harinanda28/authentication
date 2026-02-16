@@ -132,7 +132,7 @@ function Dependencies() {
             <tr key={dep.dependency_id}>
               <td>{dep.dependency_name}</td>
               <td>{dep.current_version}</td>
-              <td>-</td>
+              <td>{dep.latest_version}</td>
               <td>
                 {Number(dep.vuln_count) > 0 ? "Vulnerable" : "Up to Date"}
               </td>

@@ -85,7 +85,7 @@ const getProjectDetails = async (req, res) => {
 
     // Get vulnerabilities
     const vulQuery = `
-      SELECT dv.severity, 'Vulnerability description placeholder' as description, d.dependency_name 
+      SELECT dv.severity, dv.summary as description, d.dependency_name 
       FROM dependency_vul dv
       JOIN dependencies d ON dv.dependency_id = d.dependency_id
       WHERE dv.project_id = $1
@@ -107,10 +107,14 @@ const getProjectDetails = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+const { scanDependency } = require("../services/vulnerabilityService");
 
 // 4) POST /api/projects
+
+
 const createProject = async (req, res) => {
   const client = await pool.connect();
+
   try {
     const userId = req.user.id;
     const { project_name, description } = req.body;
@@ -123,61 +127,97 @@ const createProject = async (req, res) => {
     let dependencies = [];
     const fileContent = file.buffer.toString("utf-8");
 
-    // Detect format and parse
+    // ----------------------------
+    // Parse package.json
+    // ----------------------------
     if (file.originalname === "package.json") {
       try {
         const json = JSON.parse(fileContent);
-        const allDeps = { ...(json.dependencies || {}), ...(json.devDependencies || {}) };
+        const allDeps = {
+          ...(json.dependencies || {}),
+          ...(json.devDependencies || {})
+        };
+
         for (const [name, version] of Object.entries(allDeps)) {
           dependencies.push({
             name,
-            version: version.replace(/[^0-9.]/g, ""), // Simple cleanup
+            version: version.replace(/[^0-9.]/g, ""), // Clean ^ ~ etc
             manager: "npm"
           });
         }
       } catch (e) {
         return res.status(400).json({ message: "Invalid package.json format" });
       }
-    } else if (file.originalname.endsWith(".txt")) {
-      // Assume requirements.txt
-      const lines = fileContent.split(/\r?\n/);
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (trimmed && !trimmed.startsWith("#")) {
-          // Simple split by ==, >=, <=, etc.
-          const parts = trimmed.split(/[=<>~]+/);
-          if (parts.length >= 1) {
-            dependencies.push({
-              name: parts[0].trim(),
-              version: parts[1] ? parts[1].trim() : "latest", // Default if no version
-              manager: "pip"
-            });
-          }
-        }
-      }
     } else {
-      return res.status(400).json({ message: "Unsupported file format. Use package.json or requirements.txt" });
+      return res.status(400).json({
+        message: "Unsupported file format. Use package.json"
+      });
     }
 
     await client.query("BEGIN");
 
+    // ----------------------------
     // Insert Project
+    // ----------------------------
     const projectResult = await client.query(
-      "INSERT INTO projects (user_id, project_name, description) VALUES ($1, $2, $3) RETURNING project_id",
+      `INSERT INTO projects (user_id, project_name, description)
+       VALUES ($1, $2, $3)
+       RETURNING project_id`,
       [userId, project_name, description]
     );
+
     const projectId = projectResult.rows[0].project_id;
 
-    // Insert Dependencies
+    // ----------------------------
+    // Scan + Insert Dependencies
+    // ----------------------------
     for (const dep of dependencies) {
-      await client.query(
-        "INSERT INTO dependencies (project_id, dependency_name, current_version, latest_version, package_manager) VALUES ($1, $2, $3, $4, $5)",
-        [projectId, dep.name, dep.version, dep.version, dep.manager] // Setting latest=current for now
+
+      // 1️⃣ Scan using OSV
+      const scanResult = await scanDependency(dep.name, dep.version);
+
+      // 2️⃣ Insert dependency
+      const depInsert = await client.query(
+        `INSERT INTO dependencies
+         (project_id, dependency_name, current_version, latest_version, package_manager)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING dependency_id`,
+        [
+          projectId,
+          dep.name,
+          dep.version,
+          scanResult.safeVersion || dep.version, // Store safe version
+          dep.manager
+        ]
       );
+
+      const dependencyId = depInsert.rows[0].dependency_id;
+
+      // 3️⃣ Insert vulnerabilities (if any)
+      for (const vuln of scanResult.vulnerabilities) {
+        await client.query(
+          `INSERT INTO dependency_vul
+           (dependency_id, project_id, cve_id, severity, summary)
+           VALUES ($1, $2, $3, $4, $5)
+           ON CONFLICT (dependency_id, cve_id)
+           DO NOTHING`,
+          [
+            dependencyId,
+            projectId,
+            vuln.id,
+            vuln.severity || "UNKNOWN",
+            vuln.summary || "No description available"
+          ]
+        );
+      }
     }
 
     await client.query("COMMIT");
-    res.status(201).json({ message: "Project created successfully", projectId });
+
+    res.status(201).json({
+      message: "Project created and scanned successfully",
+      projectId
+    });
 
   } catch (err) {
     await client.query("ROLLBACK");
