@@ -5,6 +5,15 @@
   margin-bottom: 30px;
 }
 
+.Deptitle h1{
+      font-size: 28px;
+    font-weight: 600;
+
+}
+.Deptitle p {
+  color: #666;
+  margin-top: 6px;
+}
 .stat-card {
   background: white;
   border-radius: 12px;
