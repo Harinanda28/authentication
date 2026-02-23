@@ -10,13 +10,17 @@
 }
 
 .page-header h1 {
-  font-size: 28px;
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: 700;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
 }
 
 .page-header p {
   color: #666;
   margin-top: 6px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
 }
 
 .primary-btn {
@@ -44,6 +48,7 @@
   border-radius: 12px;
   flex: 1;
   border: 1px solid #eee;
+  
 }
 
 .stat-content {
@@ -59,6 +64,11 @@
   font-size: 28px;
   font-weight: bold;
   margin-top: 4px;
+}
+.stat-text .stat-title{
+   font-size: 14px;
+    font-weight: 350;
+   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 .stat-icon {
   display: flex;

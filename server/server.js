@@ -33,7 +33,7 @@ try {
 }
 
 // Get port from .env or fallback
-const PORT = process.env.PORT || 5004;
+const PORT = process.env.PORT || 5000;
 
 // Start server with error handling
 app.listen(PORT, (err) => {
