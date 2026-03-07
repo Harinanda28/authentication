@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import "../styles/projects.css";
+import {
+  FolderGit2,
+  Package,
+  AlertTriangle,
+  TrendingUp
+} from "lucide-react";
 
 function Projects() {
   const [projects, setProjects] = useState([]);
@@ -77,24 +83,47 @@ function Projects() {
       </div>
 
       {/* Stats Cards */}
-      <div className="projects-stats">
+      {/* Stats Cards */}
+  <div className="projects-stats">
 
-        <div className="stat-card">
-          <div className="stat-title">Total Projects</div>
-          <div className="stat-number">{stats.totalProjects}</div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-title">Active Vulnerabilities</div>
-          <div className={`stat-number ${stats.totalVulnerabilities > 0 ? 'red' : 'green'}`}>{stats.totalVulnerabilities}</div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-title">Total Dependencies</div>
-          <div className="stat-number">{stats.totalDependencies}</div>
-        </div>
-
+  <div className="stat-card">
+    <div className="stat-content">
+    <div className="stat-icon green-bg">
+      <Package size={20} />
+    </div>
+    <div className="stat-text">
+      <div className="stat-title">Total Projects</div>
+      <div className="stat-number">{stats.totalProjects}</div>
+    </div>
+  </div>
+</div>
+  <div className="stat-card">
+    <div className="stat-content">
+    <div className="stat-icon orange-bg">
+      <TrendingUp size={20} />
+    </div>
+    <div className="stat-text">
+      <div className="stat-title">Active Vulnerabilities</div>
+      <div className={`stat-number ${stats.totalVulnerabilities > 0 ? 'red' : 'green'}`}>
+        {stats.totalVulnerabilities}
       </div>
+    </div>
+    </div>
+  </div>
+
+  <div className="stat-card">
+      <div className="stat-content">
+    <div className="stat-icon red-bg">
+      <AlertTriangle size={20} />
+    </div>
+    <div className="stat-text">
+      <div className="stat-title">Total Dependencies</div>
+      <div className="stat-number">{stats.totalDependencies}</div>
+    </div>
+  </div>
+  </div>
+
+</div>
 
       {/* Project Grid */}
       <div className="project-grid">

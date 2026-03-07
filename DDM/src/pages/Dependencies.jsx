@@ -108,8 +108,10 @@ function Dependencies() {
 
   return (
     <div className="page-wrapper">
+      <div className="Deptitle">
       <h1>Dependencies</h1>
-
+        <p>Monitoring all projects</p>
+      </div>
       <div className="stats-row">
         <div className="stat-card"><p>Total</p><h2>{total}</h2></div>
         <div className="stat-card"><p>Vulnerable</p><h2 className="red">{vulnerable}</h2></div>

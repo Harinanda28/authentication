@@ -10,13 +10,17 @@
 }
 
 .page-header h1 {
-  font-size: 28px;
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: 700;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
 }
 
 .page-header p {
   color: #666;
   margin-top: 6px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
 }
 
 .primary-btn {
@@ -36,24 +40,58 @@
 }
 
 .stat-card {
+  display: flex;
+  align-items: center; /* align icon with text */
+  gap: 15px; /* space between icon and text */
   background: white;
   padding: 20px;
   border-radius: 12px;
   flex: 1;
   border: 1px solid #eee;
+  
 }
 
-.stat-title {
-  color: #777;
-  font-size: 14px;
+.stat-content {
+  display: flex;             /* icon + text row */
+  align-items: center;
+  gap: 10px;                 /* space between icon and text */
 }
-
+.stat-card .stat-text {
+         /* push text to the right of the icon */
+  text-align: left;      /* align text to the right */
+}
 .stat-number {
   font-size: 28px;
   font-weight: bold;
-  margin-top: 8px;
+  margin-top: 4px;
+}
+.stat-text .stat-title{
+   font-size: 14px;
+    font-weight: 350;
+   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+.stat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  color: white;
+  flex-shrink: 0;
+}
+/* Icon backgrounds */
+.green-bg {
+  background-color: #16a34a;
 }
 
+.orange-bg {
+  background-color: #f59e0b;
+}
+
+.red-bg {
+  background-color: #dc2626;
+}
 .red {
   color: #e11d48;
 }

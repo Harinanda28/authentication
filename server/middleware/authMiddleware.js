@@ -32,7 +32,10 @@ console.log("Auth header token:", token);
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     console.log("Decoded JWT:", decoded);
-    req.user = { id: decoded.userId }; // Map userId from JWT payload
+    req.userData = { 
+  userId: decoded.userId,
+  email: decoded.email // <-- add this here
+};// Map userId from JWT payload
     next();
 
   } catch (err) {

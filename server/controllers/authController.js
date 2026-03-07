@@ -85,10 +85,10 @@ exports.verifyRegisterOTP = async (req, res) => {
     );
 
     const token = jwt.sign(
-      { userId },
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" }
-    );
+  { userId, email: user.rows[0].email }, // add email here
+  process.env.JWT_SECRET,
+  { expiresIn: "1h" }
+);
 
     res.json({ message: "Verified successfully", token });
 
@@ -125,11 +125,10 @@ exports.login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { userId: user.rows[0].user_id },
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" }
-    );
-
+  { userId: user.rows[0].user_id, email: user.rows[0].email }, // add email here
+  process.env.JWT_SECRET,
+  { expiresIn: "1h" }
+);
     res.json({ token });
 
   } catch (err) {
