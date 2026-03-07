@@ -7,6 +7,7 @@ function NewProject() {
     const [formData, setFormData] = useState({
         project_name: "",
         description: "",
+        repoUrl: "",
     });
     const [file, setFile] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -19,42 +20,75 @@ function NewProject() {
 
     const handleFileChange = (e) => {
         setFile(e.target.files[0]);
+        if (e.target.files[0]) {
+            setFormData(prev => ({ ...prev, repoUrl: "" }));
+        }
     };
+    //console.log("Submitting form", { file, repoUrl });
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
 
-        if (!file) {
-            setError("Please select a dependency file (package.json or requirements.txt)");
+        const { project_name, description, repoUrl } = formData;
+
+        // Validation: Must have exactly one
+        if (!file && !repoUrl) {
+            setError("Please either upload a dependency file OR provide a Git Repository URL.");
+            setLoading(false);
+            return;
+        }
+
+        if (file && repoUrl) {
+            setError("Please provide either a file OR a Git URL, not both.");
             setLoading(false);
             return;
         }
 
         try {
             const token = localStorage.getItem("token");
-            const data = new FormData();
-            data.append("project_name", formData.project_name);
-            data.append("description", formData.description);
-            data.append("dependencyFile", file);
 
-            const response = await fetch("http://localhost:5000/api/projects", {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    // Content-Type is set automatically with FormData
-                },
-                body: data,
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || "Failed to create project");
+            // 1. Create Project (Base)
+            const projectFormData = new FormData();
+            projectFormData.append("project_name", project_name);
+            projectFormData.append("description", description);
+            if (file) {
+                projectFormData.append("dependencyFile", file);
             }
 
-            // Success - Redirect to projects page
-            navigate("/projects");
+            const createRes = await fetch("http://localhost:5000/api/projects", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}` },
+                body: projectFormData,
+            });
+
+            if (!createRes.ok) {
+                const errData = await createRes.json();
+                throw new Error(errData.message || "Failed to create project");
+            }
+
+            const { projectId } = await createRes.json();
+
+            // 2. If Git URL, trigger scan
+            if (repoUrl) {
+                const scanRes = await fetch(`http://localhost:5000/api/projects/${projectId}/repo-scan`, {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ repoUrl }),
+                });
+
+                if (!scanRes.ok) {
+                    const errData = await scanRes.json();
+                    throw new Error(errData.message || "Project created, but repository scan failed.");
+                }
+            }
+
+            // Success - Redirect
+            navigate(`/projects`);
         } catch (err) {
             console.error(err);
             setError(err.message);
@@ -68,7 +102,7 @@ function NewProject() {
             <div className="form-card">
                 <div className="form-header">
                     <h1>Create New Project</h1>
-                    <p>Upload your dependency file to start monitoring</p>
+                    <p>Provide a Git URL or upload a dependency file to start monitoring</p>
                 </div>
 
                 {error && <div className="form-error">{error}</div>}
@@ -101,6 +135,26 @@ function NewProject() {
                     </div>
 
                     <div className="input-group">
+                        <label htmlFor="repoUrl">Git Repository URL</label>
+                        <input
+                            type="url"
+                            id="repoUrl"
+                            name="repoUrl"
+                            value={formData.repoUrl}
+                            onChange={(e) => {
+                                handleChange(e);
+                                if (e.target.value) setFile(null);
+                            }}
+                            placeholder="https://github.com/user/repo.git"
+                            className="modern-input"
+                        />
+                    </div>
+
+                    <div className="divider">
+                        <span>OR</span>
+                    </div>
+
+                    <div className="input-group">
                         <label htmlFor="dependencyFile">Dependency File</label>
                         <div className="file-upload-area">
                             <input
@@ -109,7 +163,6 @@ function NewProject() {
                                 name="dependencyFile"
                                 accept=".json,.txt"
                                 onChange={handleFileChange}
-                                required
                                 className="file-input-hidden"
                             />
                             <span className="upload-icon">📁</span>
@@ -129,7 +182,7 @@ function NewProject() {
                         className="submit-btn"
                         disabled={loading}
                     >
-                        {loading ? "Creating Project..." : "Create Project"}
+                        {loading ? "Processing..." : "Create Project"}
                     </button>
 
                     <div style={{ textAlign: "center", marginTop: "15px" }}>

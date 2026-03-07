@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
+require("./scheduler");
 
 const authRoutes = require("./routes/authRoutes");
 const vulnerabilityRoutes = require("./routes/vulnerabilityRoutes");

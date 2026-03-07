@@ -44,7 +44,7 @@ const getAllProjects = async (req, res) => {
         p.project_id, 
         p.project_name, 
         p.description,
-        p.created_at as last_scanned,
+        p.last_scanned as last_scanned,
         (SELECT COUNT(*) FROM dependencies d WHERE d.project_id = p.project_id) AS total_dependencies,
         (SELECT COUNT(*) FROM dependency_vul dv WHERE dv.project_id = p.project_id) AS total_vulnerabilities
       FROM projects p
@@ -67,7 +67,14 @@ const getProjectDetails = async (req, res) => {
 
     // Verify ownership
     const projectCheck = await pool.query(
-      "SELECT * FROM projects WHERE project_id = $1 AND user_id = $2",
+      `SELECT 
+        project_id, 
+        project_name, 
+        description, 
+        last_scanned, 
+        created_at 
+       FROM projects 
+       WHERE project_id = $1 AND user_id = $2`,
       [projectId, userId]
     );
 
@@ -97,7 +104,7 @@ const getProjectDetails = async (req, res) => {
         project_id: project.project_id,
         project_name: project.project_name,
         description: project.description,
-        last_scanned: project.created_at // Assuming created_at is proxy for last_scanned
+        last_scanned: project.last_scanned || project.created_at
       },
       dependencies: depsResult.rows,
       vulnerabilities: vulResult.rows,
@@ -107,10 +114,8 @@ const getProjectDetails = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+const { scanRepo } = require("../services/repoScanService");
 const { scanDependency } = require("../services/vulnerabilityService");
-
-// 4) POST /api/projects
-
 
 const createProject = async (req, res) => {
   const client = await pool.connect();
@@ -119,40 +124,6 @@ const createProject = async (req, res) => {
     const userId = req.user.id;
     const { project_name, description } = req.body;
     const file = req.file;
-
-    if (!file) {
-      return res.status(400).json({ message: "Dependency file is required" });
-    }
-
-    let dependencies = [];
-    const fileContent = file.buffer.toString("utf-8");
-
-    // ----------------------------
-    // Parse package.json
-    // ----------------------------
-    if (file.originalname === "package.json") {
-      try {
-        const json = JSON.parse(fileContent);
-        const allDeps = {
-          ...(json.dependencies || {}),
-          ...(json.devDependencies || {})
-        };
-
-        for (const [name, version] of Object.entries(allDeps)) {
-          dependencies.push({
-            name,
-            version: version.replace(/[^0-9.]/g, ""), // Clean ^ ~ etc
-            manager: "npm"
-          });
-        }
-      } catch (e) {
-        return res.status(400).json({ message: "Invalid package.json format" });
-      }
-    } else {
-      return res.status(400).json({
-        message: "Unsupported file format. Use package.json"
-      });
-    }
 
     await client.query("BEGIN");
 
@@ -169,53 +140,67 @@ const createProject = async (req, res) => {
     const projectId = projectResult.rows[0].project_id;
 
     // ----------------------------
-    // Scan + Insert Dependencies
+    // Handle File Upload Scan (Optional)
     // ----------------------------
-    for (const dep of dependencies) {
+    if (file) {
+      let dependencies = [];
+      const fileContent = file.buffer.toString("utf-8");
 
-      // 1️⃣ Scan using OSV
-      const scanResult = await scanDependency(dep.name, dep.version);
+      if (file.originalname === "package.json") {
+        try {
+          const json = JSON.parse(fileContent);
+          const allDeps = {
+            ...(json.dependencies || {}),
+            ...(json.devDependencies || {})
+          };
 
-      // 2️⃣ Insert dependency
-      const depInsert = await client.query(
-        `INSERT INTO dependencies
-         (project_id, dependency_name, current_version, latest_version, package_manager)
-         VALUES ($1, $2, $3, $4, $5)
-         RETURNING dependency_id`,
-        [
-          projectId,
-          dep.name,
-          dep.version,
-          scanResult.safeVersion || dep.version, // Store safe version
-          dep.manager
-        ]
-      );
+          for (const [name, version] of Object.entries(allDeps)) {
+            dependencies.push({
+              name,
+              version: version.replace(/[^0-9.]/g, ""), // Clean ^ ~ etc
+              manager: "npm"
+            });
+          }
+        } catch (e) {
+          await client.query("ROLLBACK");
+          return res.status(400).json({ message: "Invalid package.json format" });
+        }
+      } else {
+        await client.query("ROLLBACK");
+        return res.status(400).json({
+          message: "Unsupported file format. Use package.json"
+        });
+      }
 
-      const dependencyId = depInsert.rows[0].dependency_id;
-
-      // 3️⃣ Insert vulnerabilities (if any)
-      for (const vuln of scanResult.vulnerabilities) {
-        await client.query(
-          `INSERT INTO dependency_vul
-           (dependency_id, project_id, cve_id, severity, summary)
+      // Scan + Insert Dependencies
+      for (const dep of dependencies) {
+        const scanResult = await scanDependency(dep.name, dep.version);
+        const depInsert = await client.query(
+          `INSERT INTO dependencies
+           (project_id, dependency_name, current_version, latest_version, package_manager)
            VALUES ($1, $2, $3, $4, $5)
-           ON CONFLICT (dependency_id, cve_id)
-           DO NOTHING`,
-          [
-            dependencyId,
-            projectId,
-            vuln.id,
-            vuln.severity || "UNKNOWN",
-            vuln.summary || "No description available"
-          ]
+           RETURNING dependency_id`,
+          [projectId, dep.name, dep.version, scanResult.safeVersion || dep.version, dep.manager]
         );
+
+        const dependencyId = depInsert.rows[0].dependency_id;
+
+        for (const vuln of scanResult.vulnerabilities) {
+          await client.query(
+            `INSERT INTO dependency_vul
+             (dependency_id, project_id, cve_id, severity, summary)
+             VALUES ($1, $2, $3, $4, $5)
+             ON CONFLICT (dependency_id, cve_id) DO NOTHING`,
+            [dependencyId, projectId, vuln.id, vuln.severity || "UNKNOWN", vuln.summary || "No description available"]
+          );
+        }
       }
     }
 
     await client.query("COMMIT");
 
     res.status(201).json({
-      message: "Project created and scanned successfully",
+      message: "Project created successfully",
       projectId
     });
 
@@ -223,6 +208,66 @@ const createProject = async (req, res) => {
     await client.query("ROLLBACK");
     console.error("Error creating project:", err);
     res.status(500).json({ message: "Server error" });
+  } finally {
+    client.release();
+  }
+};
+
+const repoScan = async (req, res) => {
+  const { id: projectId } = req.params;
+  const { repoUrl } = req.body;
+  const userId = req.user.id;
+
+  if (!repoUrl || !repoUrl.startsWith("https://")) {
+    return res.status(400).json({ message: "Valid Git HTTPS URL required" });
+  }
+
+  const client = await pool.connect();
+  try {
+    // Ownership check
+    const projectRes = await client.query("SELECT * FROM projects WHERE project_id = $1 AND user_id = $2", [projectId, userId]);
+    if (projectRes.rows.length === 0) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+
+    const dependenciesData = await scanRepo(repoUrl);
+
+    await client.query("BEGIN");
+
+    for (const dep of dependenciesData) {
+      const scanResult = await scanDependency(dep.name, dep.version);
+
+      const depInsert = await client.query(
+        `INSERT INTO dependencies
+         (project_id, dependency_name, current_version, latest_version, package_manager)
+         VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT (project_id, dependency_name) DO UPDATE 
+         SET current_version = $3, latest_version = $4
+         RETURNING dependency_id`,
+        [projectId, dep.name, dep.version, scanResult.safeVersion || dep.version, dep.manager]
+      );
+
+      const dependencyId = depInsert.rows[0].dependency_id;
+
+      for (const vuln of scanResult.vulnerabilities) {
+        await client.query(
+          `INSERT INTO dependency_vul
+           (dependency_id, project_id, cve_id, severity, summary)
+           VALUES ($1, $2, $3, $4, $5)
+           ON CONFLICT (dependency_id, cve_id) DO NOTHING`,
+          [dependencyId, projectId, vuln.id, vuln.severity || "UNKNOWN", vuln.summary || "No description available"]
+        );
+      }
+    }
+
+    await client.query("UPDATE projects SET last_scanned = NOW() WHERE project_id = $1", [projectId]);
+    await client.query("COMMIT");
+
+    res.json({ message: "Repository scanned successfully", count: dependenciesData.length });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("Error scanning repo:", err);
+    res.status(500).json({ message: "Failed to scan repository" });
   } finally {
     client.release();
   }
@@ -270,5 +315,6 @@ module.exports = {
   getAllProjects,
   getProjectDetails,
   createProject,
-  deleteProject
+  deleteProject,
+  repoScan
 };

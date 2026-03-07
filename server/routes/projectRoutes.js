@@ -16,6 +16,7 @@ router.get("/dashboard", projectController.getDashboard);
 router.get("/", projectController.getAllProjects);
 router.get("/:id/details", projectController.getProjectDetails);
 router.post("/", upload.single("dependencyFile"), projectController.createProject);
+router.post("/:id/repo-scan", projectController.repoScan);
 router.delete("/:id", projectController.deleteProject);
 
 module.exports = router;
