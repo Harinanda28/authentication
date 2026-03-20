@@ -25,11 +25,14 @@ try {
   const vulnerabilityRoutes = require("./routes/vulnerabilityRoutes");
   const projectRoutes = require("./routes/projectRoutes");
   const alertRoute = require("./routes/alertRoute");
+  const dashboardRoutes = require("./routes/dashboardRoutes");
+
 
   app.use("/api/auth", authRoutes);
   app.use("/api/vulnerability", vulnerabilityRoutes);
   app.use("/api/projects", projectRoutes);
-  app.use("/api/vulnerability/alert", alertRoute); 
+  app.use("/api/vulnerability/alert", alertRoute);
+  app.use("/api/dashboard", dashboardRoutes);
 } catch (err) {
   console.error("Error loading routes:", err);
 }

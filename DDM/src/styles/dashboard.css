@@ -139,12 +139,52 @@
 .blue-bg { background-color: #3b82f6; }
 .green-bg { background-color: #16a34a; }
 .red-bg { background-color: #dc2626; }
+.orange-bg { background-color: #f97316; }
 
 
 
 .stat-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+}
+
+/* Clickable stat cards */
+.stat-card.clickable {
+  cursor: pointer;
+}
+
+.stat-card.clickable:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.09);
+  border-color: #2563eb;
+}
+
+.stat-card.clickable:active {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.07);
+}
+
+/* Loading placeholder */
+.stat-loading {
+  color: #9ca3af;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Error banner */
+.error-banner {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  border-radius: 10px;
+  padding: 12px 18px;
+  margin-bottom: 24px;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 /* --- Charts --- */
@@ -166,3 +206,49 @@
   height: 330px;
   width: 100%;
 }
+
+/* Chart loading skeleton */
+.chart-skeleton {
+  height: 330px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+/* Chart empty state */
+.chart-empty {
+  height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  font-size: 14px;
+  text-align: center;
+  padding: 20px;
+  border: 2px dashed #e5e7eb;
+  border-radius: 10px;
+}
+
+/* Chart error state */
+.chart-error {
+  height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #b91c1c;
+  font-size: 14px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+}
+
+/* Colored text helpers */
+.orange-text { color: #f97316; }
