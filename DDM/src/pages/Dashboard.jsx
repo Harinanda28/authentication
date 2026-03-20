@@ -130,45 +130,45 @@ function Dashboard() {
       <div className="stats-row">
         <div className="stat-card">
           <div className="stat-icon blue-bg">
-  <FolderGit2 size={20} />
-</div>
-    <div className="stat-text">
-          <h4>Total Projects</h4>
-          <h2>24</h2>
-          <span className="green-text">↑ 3 new this month</span>
+            <FolderGit2 size={20} />
+          </div>
+          <div className="stat-text">
+            <h4>Total Projects</h4>
+            <h2>24</h2>
+            <span className="green-text">↑ 3 new this month</span>
+          </div>
         </div>
-    </div>
         <div className="stat-card">
           <div className="stat-icon green-bg">
-  <Package size={20} />
-</div>
-        <div className="stat-text">
-          <h4>Total Dependencies</h4>
-          <h2>1,248</h2>
-          <span className="muted">Across all projects</span>
-        </div>
+            <Package size={20} />
+          </div>
+          <div className="stat-text">
+            <h4>Total Dependencies</h4>
+            <h2>1,248</h2>
+            <span className="muted">Across all projects</span>
+          </div>
         </div>
 
         <div className="stat-card">
-      <div className="stat-icon red-bg">
-        <AlertTriangle size={20} />
-      </div>
-      <div className="stat-text">
-        <h4>Vulnerable Dependencies</h4>
-        <h2>32</h2>
-        <span className="red-text">5 critical issues</span>
-      </div>
-    </div>
+          <div className="stat-icon red-bg">
+            <AlertTriangle size={20} />
+          </div>
+          <div className="stat-text">
+            <h4>Vulnerable Dependencies</h4>
+            <h2>32</h2>
+            <span className="red-text">5 critical issues</span>
+          </div>
+        </div>
         <div className="stat-card">
           <div className="stat-icon orange-bg">
-  <TrendingUp size={20} />
-</div>
-      <div className="stat-text">
-          <h4>Dependency Drift Detected</h4>
-          <h2>28</h2>
-          <span className="orange-text">Updates available</span>
+            <TrendingUp size={20} />
+          </div>
+          <div className="stat-text">
+            <h4>Dependency Drift Detected</h4>
+            <h2>28</h2>
+            <span className="orange-text">Updates available</span>
+          </div>
         </div>
-      </div>
       </div>
 
       {/* Charts */}

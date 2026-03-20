@@ -2,6 +2,7 @@ const pool = require("../db");
 const { sendAlertEmail } = require("../utils/emailsend");
 const { scanDependency } = require("../services/vulnerabilityService");
 const { scanRepo } = require("../services/repoScanService");
+const { createAlertAndNotify } = require("../utils/alertHelper");
 
 // 1️⃣ GET /api/projects/dashboard
 const getDashboard = async (req, res) => {
@@ -139,8 +140,6 @@ const createProject = async (req, res) => {
 
     const projectId = projectResult.rows[0].project_id;
 
-    const emailAlerts = [];
-
     if (file) {
       const fileContent = file.buffer.toString("utf-8");
       let dependencies = [];
@@ -182,11 +181,12 @@ const createProject = async (req, res) => {
         const dependencyId = depInsert.rows[0].dependency_id;
 
         for (const vuln of vulnerabilities) {
-          await client.query(
+          const vulResult = await client.query(
             `INSERT INTO dependency_vul
              (dependency_id, project_id, cve_id, severity, summary)
              VALUES ($1, $2, $3, $4, $5)
-             ON CONFLICT (dependency_id, cve_id) DO NOTHING`,
+             ON CONFLICT (dependency_id, cve_id) DO NOTHING
+             RETURNING dep_vul_id`,
             [
               dependencyId,
               projectId,
@@ -195,26 +195,27 @@ const createProject = async (req, res) => {
               vuln.summary || "No description available"
             ]
           );
-        }
 
-        if (vulnerabilities.length > 0) {
-          emailAlerts.push({ dependency: dep.name, vulnerabilities });
+          // If the vulnerability was newly inserted, create an alert and send email
+          if (vulResult.rows.length > 0) {
+            await createAlertAndNotify({
+              client,
+              projectId,
+              dependencyId,
+              depVulId: vulResult.rows[0].dep_vul_id,
+              severity: vuln.severity || "UNKNOWN",
+              projectName: project_name,
+              dependencyName: dep.name,
+              cveId: vuln.id,
+              summary: vuln.summary || "No description available",
+              ownerEmail: userEmail,
+            });
+          }
         }
       }
     }
 
     await client.query("COMMIT");
-
-    for (const alert of emailAlerts) {
-      const subject = "⚠️ New Vulnerability Detected!";
-      const text =
-        `Dependency "${alert.dependency}" has vulnerabilities:\n\n` +
-        alert.vulnerabilities
-          .map(v => `${v.id} | ${v.severity} | ${v.summary}`)
-          .join("\n");
-
-      await sendAlertEmail(userEmail, subject, text);
-    }
 
     res.status(201).json({
       message: "Project created successfully",
@@ -244,13 +245,17 @@ const repoScan = async (req, res) => {
 
   try {
     const projectRes = await client.query(
-      "SELECT * FROM projects WHERE project_id = $1 AND user_id = $2",
+      "SELECT p.*, u.email AS owner_email FROM projects p JOIN users u ON p.user_id = u.user_id WHERE p.project_id = $1 AND p.user_id = $2",
       [projectId, userId]
     );
 
     if (projectRes.rows.length === 0) {
       return res.status(404).json({ message: "Project not found" });
     }
+
+    const project = projectRes.rows[0];
+    const ownerEmail = project.owner_email;
+    const projectName = project.project_name;
 
     const dependenciesData = await scanRepo(repoUrl);
 
@@ -270,13 +275,30 @@ const repoScan = async (req, res) => {
       const dependencyId = depInsert.rows[0].dependency_id;
 
       for (const vuln of scanResult.vulnerabilities) {
-        await client.query(
+        const vulResult = await client.query(
           `INSERT INTO dependency_vul
            (dependency_id, project_id, cve_id, severity, summary)
            VALUES ($1, $2, $3, $4, $5)
-           ON CONFLICT (dependency_id, cve_id) DO NOTHING`,
+           ON CONFLICT (dependency_id, cve_id) DO NOTHING
+           RETURNING dep_vul_id`,
           [dependencyId, projectId, vuln.id, vuln.severity, vuln.summary]
         );
+
+        // If the vulnerability was newly inserted, create an alert and send email
+        if (vulResult.rows.length > 0) {
+          await createAlertAndNotify({
+            client,
+            projectId,
+            dependencyId,
+            depVulId: vulResult.rows[0].dep_vul_id,
+            severity: vuln.severity || "UNKNOWN",
+            projectName,
+            dependencyName: dep.name,
+            cveId: vuln.id,
+            summary: vuln.summary || "No description available",
+            ownerEmail,
+          });
+        }
       }
     }
 
