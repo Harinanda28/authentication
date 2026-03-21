@@ -122,9 +122,7 @@ function Dashboard() {
             <p>Overview of your dependency security status</p>
           </div>
         </div>
-        <div className="top-right">
-          <button className="scan-btn">⟳ Scan All Projects</button>
-        </div>
+        
       </div>
 
       {/* ── Error Banner ── */}

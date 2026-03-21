@@ -69,7 +69,7 @@ function Dependencies() {
 }
 
 export default Dependencies;*/
-
+/////////////////////////////////////////////////////////////////////////
 import { useEffect, useState } from "react";
 import "../styles/dependencies.css";
 
@@ -100,11 +100,11 @@ function Dependencies() {
     fetchDependencies();
   }, []);
 
-  // ✅ Dynamic counts based on vuln_count
+  // ✅ Dynamic counts based on the status provided by API
   const total = dependencies.length;
-  const vulnerable = dependencies.filter(d => Number(d.vuln_count) > 0).length;
-  const drift = 0; // not provided by API
-  const upToDate = dependencies.filter(d => Number(d.vuln_count) === 0).length;
+  const vulnerable = dependencies.filter(d => d.status === 'Vulnerable').length;
+  const drift = dependencies.filter(d => d.status === 'Version Drift').length;
+  const upToDate = dependencies.filter(d => d.status === 'Up to Date').length;
 
   return (
     <div className="page-wrapper">
@@ -135,10 +135,8 @@ function Dependencies() {
               <td>{dep.dependency_name}</td>
               <td>{dep.current_version}</td>
               <td>{dep.latest_version}</td>
-              <td>
-                {Number(dep.vuln_count) > 0 ? "Vulnerable" : "Up to Date"}
-              </td>
-              <td>{dep.vuln_count}</td>
+              <td>{dep.status}</td>
+              <td>{Number(dep.vuln_count) > 0 ? dep.vuln_count : "-"}</td>
             </tr>
           ))}
         </tbody>
@@ -148,3 +146,5 @@ function Dependencies() {
 }
 
 export default Dependencies;
+
+

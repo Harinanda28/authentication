@@ -173,7 +173,7 @@ const createProject = async (req, res) => {
             projectId,
             dep.name,
             dep.version,
-            scanResult.safeVersion || dep.version,
+            scanResult.latestVersion || dep.version,
             dep.manager
           ]
         );
@@ -269,7 +269,7 @@ const repoScan = async (req, res) => {
          (project_id, dependency_name, current_version, latest_version, package_manager)
          VALUES ($1, $2, $3, $4, $5)
          RETURNING dependency_id`,
-        [projectId, dep.name, dep.version, scanResult.safeVersion || dep.version, dep.manager]
+        [projectId, dep.name, dep.version, scanResult.latestVersion || dep.version, dep.manager]
       );
 
       const dependencyId = depInsert.rows[0].dependency_id;
